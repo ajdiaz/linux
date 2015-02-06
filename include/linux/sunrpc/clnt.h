@@ -69,6 +69,13 @@ struct rpc_clnt {
 	struct dentry		*cl_debugfs;	/* debugfs directory */
 #endif
 	struct rpc_xprt_iter	cl_xpi;
+#ifndef NFS_MAX_REPLICA
+#define NFS_MAX_REPLICA 16
+#endif
+
+	unsigned int nreplica;
+	unsigned int creplica;
+	struct sockaddr_in replica_addr[NFS_MAX_REPLICA];
 };
 
 /*
@@ -123,6 +130,11 @@ struct rpc_create_args {
 	unsigned long		flags;
 	char			*client_name;
 	struct svc_xprt		*bc_xprt;	/* NFSv4.1 backchannel */
+#ifndef NFS_MAX_REPLICA
+#define NFS_MAX_REPLICA 16
+#endif
+	unsigned int nreplica;
+	struct sockaddr_in replica_addr[NFS_MAX_REPLICA];
 };
 
 struct rpc_add_xprt_test {

@@ -87,6 +87,10 @@ struct nfs_client_initdata {
 /*
  * In-kernel mount arguments
  */
+#ifndef NFS_MAX_REPLICA
+#define NFS_MAX_REPLICA 16
+#endif
+
 struct nfs_parsed_mount_data {
 	int			flags;
 	unsigned int		rsize, wsize;
@@ -121,6 +125,9 @@ struct nfs_parsed_mount_data {
 		int			port;
 		unsigned short		protocol;
 	} nfs_server;
+
+  unsigned int nreplica;
+  struct sockaddr_in replica_addr[NFS_MAX_REPLICA];
 
 	struct security_mnt_opts lsm_opts;
 	struct net		*net;

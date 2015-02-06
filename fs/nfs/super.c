@@ -1210,6 +1210,8 @@ static int nfs_parse_mount_options(char *raw,
 	int rc, sloppy = 0, invalid_option = 0;
 	unsigned short protofamily = AF_UNSPEC;
 	unsigned short mountfamily = AF_UNSPEC;
+	int n=0;
+
 
 	if (!raw) {
 		dfprintk(MOUNT, "NFS: mount options string was NULL.\n");
@@ -1513,11 +1515,21 @@ static int nfs_parse_mount_options(char *raw,
 			string = match_strdup(args);
 			if (string == NULL)
 				goto out_nomem;
+			if (n==0) {
 			mnt->nfs_server.addrlen =
 				rpc_pton(mnt->net, string, strlen(string),
 					(struct sockaddr *)
 					&mnt->nfs_server.address,
 					sizeof(mnt->nfs_server.address));
+      } else {
+        int len;
+        len = rpc_pton(mnt->net, string, strlen(string),
+          (struct sockaddr *) &mnt->replica_addr[mnt->nreplica],
+          sizeof(mnt->replica_addr[mnt->nreplica]));
+          mnt->nreplica++;
+      }
+      n++;
+
 			kfree(string);
 			if (mnt->nfs_server.addrlen == 0)
 				goto out_invalid_address;
@@ -2088,6 +2100,14 @@ static int nfs23_validate_mount_data(void *options,
 #endif
 		}
 
+  case 7:
+    args->nreplica = data->nreplica;
+    memcpy(args->replica_addr, data->replica_addr, sizeof(data->replica_addr));
+    {
+      int n;
+      for (n=0; n<args->nreplica; n++)
+        printk(KERN_NOTICE "%s: failover(%d) %pI4\n", __func__, n, &args->replica_addr[n].sin_addr.s_addr);
+    }
 		break;
 	default:
 		return NFS_TEXT_DATA;

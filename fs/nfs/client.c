@@ -509,6 +509,15 @@ int nfs_create_rpc_client(struct nfs_client *clp,
 	if (!IS_ERR(clp->cl_rpcclient))
 		return 0;
 
+  args.nreplica = clp->nreplica;
+  memcpy(args.replica_addr, clp->replica_addr, sizeof(clp->replica_addr));
+  {
+    int n;
+    for (n=0; n<args.nreplica; n++)
+      printk(KERN_NOTICE "%s: failover(%d) %pI4\n", __func__, n,
+             &args.replica_addr[n].sin_addr.s_addr);
+  }
+
 	clnt = rpc_create(&args);
 	if (IS_ERR(clnt)) {
 		dprintk("%s: cannot create RPC client. Error = %ld\n",
@@ -659,6 +668,14 @@ static int nfs_init_server(struct nfs_server *server,
 	clp = nfs_get_client(&cl_init);
 	if (IS_ERR(clp))
 		return PTR_ERR(clp);
+
+  clp->nreplica = data->nreplica;
+  memcpy(clp->replica_addr, data->replica_addr, sizeof(data->replica_addr));
+  {
+    int n;
+    for (n=0; n<clp->nreplica; n++)
+      printk(KERN_NOTICE "%s: failover(%d) %pI4\n", __func__, n, &clp->replica_addr[n].sin_addr.s_addr);
+  }
 
 	server->nfs_client = clp;
 

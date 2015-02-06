@@ -496,6 +496,20 @@ static struct rpc_clnt *rpc_create_xprt(struct rpc_create_args *args,
 	if (!(args->flags & RPC_CLNT_CREATE_QUIET))
 		clnt->cl_chatty = 1;
 
+  clnt->nreplica = args->nreplica;
+  clnt->creplica = 0;
+  memcpy(clnt->replica_addr, &args->replica_addr,
+         sizeof(args->replica_addr));
+  memcpy(&clnt->replica_addr[clnt->nreplica], args->address,
+         sizeof(struct sockaddr));
+  clnt->nreplica++;
+  {
+    int n;
+    for (n=0; n<clnt->nreplica; n++)
+      printk(KERN_NOTICE "%s: failover(%d) %pI4\n", __func__, n,
+             &clnt->replica_addr[n].sin_addr.s_addr);
+  }
+
 	return clnt;
 }
 
@@ -2218,6 +2232,25 @@ call_timeout(struct rpc_task *task)
 			task->tk_xprt->servername);
 		}
 	}
+
+  printk(KERN_NOTICE "%s: server %s not responding, retrying replica....\n",
+         clnt->cl_program->name,
+         rcu_dereference(clnt->cl_xprt)->servername);
+  printk(KERN_NOTICE "clnt->cl_autobind: %d\n",clnt->cl_autobind);
+  memcpy(&clnt->cl_xprt->addr, &clnt->replica_addr[clnt->creplica], sizeof(struct sockaddr));
+  printk(KERN_NOTICE "clnt->creplica: %d\n", clnt->creplica);
+
+  clnt->creplica++;
+  clnt->cl_autobind = 1;
+
+  if (clnt->creplica == clnt->nreplica)
+    clnt->creplica = 0;
+  {
+    int n;
+    for (n=0; n<clnt->nreplica; n++)
+      printk(KERN_NOTICE "%s: failover(%d) %pI4\n", __func__, n, &clnt->replica_addr[n].sin_addr.s_addr);
+  }
+
 	rpc_force_rebind(clnt);
 	/*
 	 * Did our request time out due to an RPCSEC_GSS out-of-sequence

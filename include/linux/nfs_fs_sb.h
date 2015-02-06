@@ -118,6 +118,13 @@ struct nfs_client {
 	struct fscache_cookie	*fscache;	/* client index cache cookie */
 #endif
 
+#ifndef NFS_MAX_REPLICA
+#define NFS_MAX_REPLICA 16
+#endif
+
+  unsigned int nreplica;
+  struct sockaddr_in replica_addr[NFS_MAX_REPLICA];
+
 	struct net		*cl_net;
 };
 
