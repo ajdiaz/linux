@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-2.0 */
 #ifndef _ASM_UACCESS_H
 #define _ASM_UACCESS_H
 
@@ -67,7 +68,7 @@ static inline int __access_ok(const void __user * addr, unsigned long size)
 	return 1;
 }
 
-static inline int access_ok(int type, const void __user * addr, unsigned long size)
+static inline int access_ok(const void __user * addr, unsigned long size)
 {
 	return 1;
 }

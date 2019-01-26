@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * builtin-config.c
  *
@@ -34,8 +35,7 @@ static struct option config_options[] = {
 	OPT_END()
 };
 
-static int set_config(struct perf_config_set *set, const char *file_name,
-		      const char *var, const char *value)
+static int set_config(struct perf_config_set *set, const char *file_name)
 {
 	struct perf_config_section *section = NULL;
 	struct perf_config_item *item = NULL;
@@ -49,7 +49,6 @@ static int set_config(struct perf_config_set *set, const char *file_name,
 	if (!fp)
 		return -1;
 
-	perf_config_set__collect(set, file_name, var, value);
 	fprintf(fp, "%s\n", first_line);
 
 	/* overwrite configvariables */
@@ -161,6 +160,7 @@ int cmd_config(int argc, const char **argv)
 	struct perf_config_set *set;
 	char *user_config = mkpath("%s/.perfconfig", getenv("HOME"));
 	const char *config_filename;
+	bool changed = false;
 
 	argc = parse_options(argc, argv, config_options, config_usage,
 			     PARSE_OPT_STOP_AT_NON_OPTION);
@@ -196,6 +196,7 @@ int cmd_config(int argc, const char **argv)
 			pr_err("Error: takes no arguments\n");
 			parse_options_usage(config_usage, config_options, "l", 1);
 		} else {
+do_action_list:
 			if (show_config(set) < 0) {
 				pr_err("Nothing configured, "
 				       "please check your %s \n", config_filename);
@@ -204,10 +205,8 @@ int cmd_config(int argc, const char **argv)
 		}
 		break;
 	default:
-		if (!argc) {
-			usage_with_options(config_usage, config_options);
-			break;
-		}
+		if (!argc)
+			goto do_action_list;
 
 		for (i = 0; argv[i]; i++) {
 			char *var, *value;
@@ -231,14 +230,25 @@ int cmd_config(int argc, const char **argv)
 					goto out_err;
 				}
 			} else {
-				if (set_config(set, config_filename, var, value) < 0) {
-					pr_err("Failed to set '%s=%s' on %s\n",
-					       var, value, config_filename);
+				if (perf_config_set__collect(set, config_filename,
+							     var, value) < 0) {
+					pr_err("Failed to add '%s=%s'\n",
+					       var, value);
 					free(arg);
 					goto out_err;
 				}
+				changed = true;
 			}
 			free(arg);
+		}
+
+		if (!changed)
+			break;
+
+		if (set_config(set, config_filename) < 0) {
+			pr_err("Failed to set the configs on %s\n",
+			       config_filename);
+			goto out_err;
 		}
 	}
 

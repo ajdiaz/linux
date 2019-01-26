@@ -131,8 +131,7 @@ static int emulate_spe(struct pt_regs *regs, unsigned int reg,
 
 	/* Verify the address of the operand */
 	if (unlikely(user_mode(regs) &&
-		     !access_ok((flags & ST ? VERIFY_WRITE : VERIFY_READ),
-				addr, nb)))
+		     !access_ok(addr, nb)))
 		return -EFAULT;
 
 	/* userland only */
@@ -332,14 +331,14 @@ int fix_alignment(struct pt_regs *regs)
 	 * when pasting to a co-processor. Furthermore, paste_last is the
 	 * synchronisation point for preceding copy/paste sequences.
 	 */
-	if ((instr & 0xfc0006fe) == PPC_INST_COPY)
+	if ((instr & 0xfc0006fe) == (PPC_INST_COPY & 0xfc0006fe))
 		return -EIO;
 
 	r = analyse_instr(&op, regs, instr);
 	if (r < 0)
 		return -EINVAL;
 
-	type = op.type & INSTR_TYPE_MASK;
+	type = GETTYPE(op.type);
 	if (!OP_IS_LOAD_STORE(type)) {
 		if (op.type != CACHEOP + DCBZ)
 			return -EINVAL;

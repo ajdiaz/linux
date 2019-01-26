@@ -102,6 +102,7 @@ EXPORT_SYMBOL_GPL(nf_reject_ip_tcphdr_put);
 /* Send RST reply */
 void nf_send_reset(struct net *net, struct sk_buff *oldskb, int hook)
 {
+	struct net_device *br_indev __maybe_unused;
 	struct sk_buff *nskb;
 	struct iphdr *niph;
 	const struct tcphdr *oth;
@@ -132,6 +133,8 @@ void nf_send_reset(struct net *net, struct sk_buff *oldskb, int hook)
 	if (ip_route_me_harder(net, nskb, RTN_UNSPEC))
 		goto free_nskb;
 
+	niph = ip_hdr(nskb);
+
 	/* "Never happens" */
 	if (nskb->len > dst_mtu(skb_dst(nskb)))
 		goto free_nskb;
@@ -145,10 +148,11 @@ void nf_send_reset(struct net *net, struct sk_buff *oldskb, int hook)
 	 * build the eth header using the original destination's MAC as the
 	 * source, and send the RST packet directly.
 	 */
-	if (oldskb->nf_bridge) {
+	br_indev = nf_bridge_get_physindev(oldskb);
+	if (br_indev) {
 		struct ethhdr *oeth = eth_hdr(oldskb);
 
-		nskb->dev = nf_bridge_get_physindev(oldskb);
+		nskb->dev = br_indev;
 		niph->tot_len = htons(nskb->len);
 		ip_send_check(niph);
 		if (dev_hard_header(nskb, nskb->dev, ntohs(nskb->protocol),

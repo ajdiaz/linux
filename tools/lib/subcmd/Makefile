@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-2.0
 include ../../scripts/Makefile.include
 include ../../scripts/utilities.mak		# QUIET_CLEAN
 
@@ -35,8 +36,6 @@ endif
 CFLAGS += -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE
 
 CFLAGS += -I$(srctree)/tools/include/
-CFLAGS += -I$(srctree)/include/uapi
-CFLAGS += -I$(srctree)/include
 
 SUBCMD_IN := $(OUTPUT)libsubcmd-in.o
 

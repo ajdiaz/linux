@@ -14,6 +14,7 @@
 #include <asm/ppc-opcode.h>
 #include <linux/string.h>
 #include <linux/kallsyms.h>
+#include <asm/asm-compat.h>
 
 /* Flags for create_branch:
  * "b"   == create_branch(addr, target, 0);
@@ -31,8 +32,36 @@ unsigned int create_cond_branch(const unsigned int *addr,
 				unsigned long target, int flags);
 int patch_branch(unsigned int *addr, unsigned long target, int flags);
 int patch_instruction(unsigned int *addr, unsigned int instr);
+int raw_patch_instruction(unsigned int *addr, unsigned int instr);
+
+static inline unsigned long patch_site_addr(s32 *site)
+{
+	return (unsigned long)site + *site;
+}
+
+static inline int patch_instruction_site(s32 *site, unsigned int instr)
+{
+	return patch_instruction((unsigned int *)patch_site_addr(site), instr);
+}
+
+static inline int patch_branch_site(s32 *site, unsigned long target, int flags)
+{
+	return patch_branch((unsigned int *)patch_site_addr(site), target, flags);
+}
+
+static inline int modify_instruction(unsigned int *addr, unsigned int clr,
+				     unsigned int set)
+{
+	return patch_instruction(addr, (*addr & ~clr) | set);
+}
+
+static inline int modify_instruction_site(s32 *site, unsigned int clr, unsigned int set)
+{
+	return modify_instruction((unsigned int *)patch_site_addr(site), clr, set);
+}
 
 int instr_is_relative_branch(unsigned int instr);
+int instr_is_relative_link_branch(unsigned int instr);
 int instr_is_branch_to_addr(const unsigned int *instr, unsigned long addr);
 unsigned long branch_target(const unsigned int *instr);
 unsigned int translate_branch(const unsigned int *dest,
@@ -83,16 +112,8 @@ static inline unsigned long ppc_function_entry(void *func)
 	 * On PPC64 ABIv1 the function pointer actually points to the
 	 * function's descriptor. The first entry in the descriptor is the
 	 * address of the function text.
-	 *
-	 * However, we may also receive pointer to an assembly symbol. To
-	 * detect that, we first check if the function pointer we receive
-	 * already points to kernel/module text and we only dereference it
-	 * if it doesn't.
 	 */
-	if (kernel_text_address((unsigned long)func))
-		return (unsigned long)func;
-	else
-		return ((func_descr_t *)func)->entry;
+	return ((func_descr_t *)func)->entry;
 #else
 	return (unsigned long)func;
 #endif

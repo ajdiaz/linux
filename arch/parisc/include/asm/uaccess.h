@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-2.0 */
 #ifndef __PARISC_UACCESS_H
 #define __PARISC_UACCESS_H
 
@@ -26,7 +27,7 @@
  * that put_user is the same as __put_user, etc.
  */
 
-#define access_ok(type, uaddr, size)	\
+#define access_ok(uaddr, size)	\
 	( (uaddr) == (uaddr) )
 
 #define put_user __put_user

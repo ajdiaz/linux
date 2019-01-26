@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-2.0 */
 #ifndef _ASM_IA64_UACCESS_H
 #define _ASM_IA64_UACCESS_H
 
@@ -66,7 +67,7 @@ static inline int __access_ok(const void __user *p, unsigned long size)
 	return likely(addr <= seg) &&
 	 (seg == KERNEL_DS.seg || likely(REGION_OFFSET(addr) < RGN_MAP_LIMIT));
 }
-#define access_ok(type, addr, size)	__access_ok((addr), (size))
+#define access_ok(addr, size)	__access_ok((addr), (size))
 
 /*
  * These are the main single-value transfer routines.  They automatically

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0
 #include <linux/ceph/ceph_debug.h>
 
 #include <linux/bug.h>
@@ -34,7 +35,6 @@ int ceph_mdsmap_get_random_mds(struct ceph_mdsmap *m)
 
 	/* pick */
 	n = prandom_u32() % n;
-	i = 0;
 	for (i = 0; n > 0; i++, n--)
 		while (m->m_info[i].state <= 0)
 			i++;
